@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#101619">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101719'/%3E%3Cpath d='M7 5h12l7 7v15H7z' fill='%23d5ff3f'/%3E%3Cpath d='M13 11h7l4 4v8h-4v-8h-7z' fill='%23101719'/%3E%3C/svg%3E">
+  <title>DOWNLINK — A Corridor Action Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="cabinet">
+    <header class="topline"><span class="brand"><i></i> NIGHT SHIFT ARCADE</span><span class="edition">FIELD OPERATION 07 <b>◆</b> 1988</span></header>
+    <section class="screen" aria-label="Game screen">
+      <canvas id="game" width="960" height="540" aria-label="Downlink game"></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+      <div id="overlay" class="overlay">
+        <div class="briefing">
+          <div class="eyebrow"><span class="pulse"></span> EMERGENCY CHANNEL // 03:17 AM</div>
+          <h1>DOWN<span>LINK</span></h1>
+          <p class="tagline">THE EXIT IS <em>BELOW.</em></p>
+          <p class="intro">Three floors between you and daylight.<br>Keep moving. Don’t let them box you in.</p>
+          <button id="startButton" class="start-button">START OPERATION <span>▶</span></button>
+          <div class="brief-controls"><span><b>A / D</b> MOVE</span><span><b>SHIFT</b> RUN</span><span><b>S</b> COVER</span><span><b>SPACE</b> JUMP</span><span><b>CLICK</b> FIRE</span></div>
+        </div>
+        <div class="brief-art" aria-hidden="true"><div class="art-moon"></div><div class="art-building b1"></div><div class="art-building b2"></div><div class="art-building b3"></div><div class="art-soldier"><i></i><b></b></div><div class="art-floor"></div><span class="art-label">NORTH WING / SERVICE LIFT</span></div>
+      </div>
+      <div class="mobile-controls" aria-label="Touch controls">
+        <div class="move-pad"><button data-key="a">◀</button><button data-key="d">▶</button></div>
+        <div class="action-pad"><button data-key="s">COVER</button><button data-key="space">JUMP</button><button data-key="fire" class="fire">FIRE</button></div>
+      </div>
+    </section>
+    <footer><span>© 1988 <b>BLACKWIRE</b> INTERACTIVE</span><span class="footer-center">ONE WAY DOWN <i>●</i> NO WAY OUT</span><span>INSERT COURAGE <b>▶</b></span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
