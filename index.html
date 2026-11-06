@@ -1,0 +1,36 @@
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const $=s=>document.querySelector(s),hud=$('#hud'),overlay=$('#overlay');
+const W=960,H=540,G=460;let state='title',last=0,elapsed=0,level=9,score=0,player, enemies=[],shots=[],sparks=[],pickups=[],keys={},ammo=0,weapon=0,shake=0,doorFlash=0,transition=0,audio=null;
+const floorNames=['SUBLEVEL 09','SUBLEVEL 08','SUBLEVEL 07','SUBLEVEL 06','SUBLEVEL 05','SUBLEVEL 04','SUBLEVEL 03','SUBLEVEL 02','SUBLEVEL 01'];
+const palettes=[['#17232b','#27343a','#bd7848'],['#182128','#293437','#75a991'],['#1b2028','#34363a','#c27f53'],['#161e25','#30353c','#8d80af'],['#1c2429','#3a3934','#d4a554'],['#17232a','#2e3539','#5c9d9a'],['#1b2025','#393535','#d07461'],['#161e24','#2d3839','#7296ac'],['#1a2128','#3a3532','#db9d4c']];
+function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0)}window.addEventListener('resize',resize);resize();
+function sound(freq=220,dur=.07,type='square',vol=.025){try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}catch(e){}}
+function rand(a,b){return a+Math.random()*(b-a)}
+function newFloor(){
+ player={x:55,y:G-40,vx:0,vy:0,w:25,h:40,face:1,hp:100,inv:0,onGround:true,crouch:false,fireWait:0,jumpLock:false};shots=[];sparks=[];pickups=[];
+ let n=Math.min(2+Math.floor((9-level)*.65),6);enemies=[];
+ const positions=[];for(let i=0;i<n;i++){let x=rand(255,785);while(positions.some(p=>Math.abs(p-x)<100))x=rand(255,785);positions.push(x);const type=(i%3===0&&level<8)?'rusher':((i%3===1)?'guard':'scout');enemies.push({x,y:G-38,w:type==='rusher'?27:24,h:38,hp:type==='guard'?3:2,type,face:x>450?-1:1,fire:rand(.8,2),alert:false,stun:0})}
+ if(Math.random()<.78)pickups.push({x:rand(140,805),y:G-18,type:'intel',got:false});
+ updateHUD();
+}
+function start(){level=9;score=0;ammo=0;weapon=0;elapsed=0;newFloor();state='playing';overlay.classList.add('hidden');hud.classList.add('active');sound(180,.13,'sawtooth');}
+function updateHUD(){
+ $('#floor-number').innerHTML=String(level).padStart(2,'0')+'<small> / 09</small>';
+ $('#health-count').textContent=Math.max(0,Math.ceil(player?.hp||100));$('#health-fill').style.width=Math.max(0,player?.hp||100)+'%';$('#health-fill').style.background=(player?.hp||100)<35?'#e95a48':'#70d1bd';
+ $('#enemy-count').textContent=String(enemies.filter(e=>e.hp>0).length).padStart(2,'0');
+ $('#mission-text').innerHTML=enemies.some(e=>e.hp>0)?'Neutralize all hostiles<br>Freight lift locked':'Corridor clear<br>Enter the freight lift';
+ $('#weapon-name').textContent=weapon?'PULSE CARBINE':'SERVICE PISTOL';$('#weapon-type').textContent=weapon?'CHARGED SLUG':'STANDARD ISSUE';$('#weapon-icon').textContent=weapon?'ϟ':'⌁';$('#ammo-count').innerHTML=weapon?`${ammo}<small> / 6</small>`:'∞<small> / 1</small>';
+}
+function burst(x,y,color,n=5){for(let i=0;i<n;i++)sparks.push({x,y,vx:rand(-120,120),vy:rand(-150,50),life:rand(.15,.42),max:.42,color,size:rand(1,3)})}
+function fire(){if(state!=='playing'||player.fireWait>0||player.hp<=0)return;if(weapon&&ammo<=0){sound(100,.04);return}player.fireWait=weapon?.42:.23;if(weapon)ammo--;let yy=player.y+(player.crouch?26:15),xx=player.x+player.face*17;shots.push({x:xx,y:yy,vx:player.face*(weapon?560:680),life:1.5,team:'player',damage:weapon?3:1,pulse:!!weapon});burst(xx,yy,'#ffc866',3);sound(weapon?130:240,.055,weapon?'sawtooth':'square',.018);updateHUD()}
+function switchWeapon(){weapon=1-weapon;if(weapon&&ammo===0)ammo=6;updateHUD();sound(weapon?420:280,.06,'triangle',.02)}
+function hurt(n=10){if(player.inv>0||state!=='playing')return;player.hp-=n;player.inv=.75;shake=7;sound(90,.18,'sawtooth',.045);burst(player.x,player.y-15,'#ed5f50',10);if(player.hp<=0){player.hp=0;state='dead';endScreen(false)}updateHUD()}
+function endScreen(win){state=win?'won':'dead';overlay.classList.remove('hidden');$('#eyebrow').textContent=win?'EXTRACTION COMPLETE':'SIGNAL LOST';$('#title').innerHTML=win?'MISSION<br><span class="title-accent">CLEAR</span>':'YOU ARE<br><span class="title-accent">DOWN</span>';$('#subtitle').textContent=win?`You cleared all nine levels and made it out with ${score.toLocaleString()} points of intel. The rest of the facility can wait until morning.`:`The corridor swallowed your signal on level ${String(level).padStart(2,'0')}. Regroup, reload, and take another run.`;$('#start-button').textContent=win?'↻  RUN IT AGAIN':'↻  TRY AGAIN';$('#controls-note').innerHTML=`FINAL SCORE &nbsp; <b>${score.toLocaleString()}</b><br><b>A / D or ← / →</b> move &nbsp;·&nbsp; <b>SPACE / ↑</b> jump &nbsp;·&nbsp; <b>J</b> fire`;$('#mission-text').innerHTML=win?'Extraction confirmed':'Operator down';hud.classList.remove('active')}
+$('#start-button').addEventListener('click',start);
+const map={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',ArrowDown:'down',s:'down',S:'down',ArrowUp:'jump',w:'jump',W:'jump',' ':'jump',j:'fire',J:'fire',z:'fire',Z:'fire',k:'switch',K:'switch',x:'switch',X:'switch'};
+window.addEventListener('keydown',e=>{if(map[e.key]){e.preventDefault();const k=map[e.key];if(k==='switch'&&!keys[k])switchWeapon();if(k==='fire')fire();keys[k]=true}if((e.key==='Enter'||e.key===' ')&&(state==='title'||state==='dead'||state==='won')){e.preventDefault();start()}if(e.key==='Escape'&&state==='playing'){state='paused';$('#eyebrow').textContent='PAUSED';$('#title').innerHTML='HOLD<br><span class="title-accent">POSITION</span>';$('#subtitle').textContent='The facility is still out there. Take a breath, operator.';$('#start-button').textContent='▶  RESUME';$('#start-button').onclick=()=>{state='playing';overlay.classList.add('hidden');$('#start-button').onclick=start};$('#controls-note').innerHTML='<b>ESC</b> resume &nbsp;·&nbsp; Keep your head down';overlay.classList.remove('hidden')}});
+window.addEventListener('keyup',e=>{if(map[e.key])keys[map[e.key]]=false});
+document.querySelectorAll('.touch-btn').forEach(b=>{const k=b.dataset.key;const down=e=>{e.preventDefault();b.classList.add('active');if(k==='switch')switchWeapon();else if(k==='fire')fire();else if(k==='jump')keys.jump=true;else keys[k]=true};const up=e=>{e.preventDefault();b.classList.remove('active');keys[k]=false};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointerleave',up);b.addEventListener('pointercancel',up)});
